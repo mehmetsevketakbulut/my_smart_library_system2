@@ -1,0 +1,1 @@
+Bu repoda mysql aracılığı ile oluşturduğum veri tabanındaki kullanıcı,yazar,kitapkategori gibi bilgilerin Python ile bağlantısını sağladım ve projenin şuan ki halinde  local host üzerinden /kitaplar sekmesinde veritabanındaki kitap bilgilerine ulaşılabiliyor
