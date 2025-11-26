@@ -1,11 +1,31 @@
+
 from flask import current_app as app, jsonify, request, render_template
 from . import db
 from .models import Kitap, Kullanici, Yazar, Kategori, Odunc
-from datetime import date
+
 
 @app.route("/")
 def home():
     return "Akıllı Kütüphane API - Çalışıyor"
+
+
+@app.route("register",methods=["POST","GET"])
+def register():
+    if request.method=="POST":
+        isim=request.form["isim"]
+        email=request.form["email"]
+        sifre = request.form["sifre"]
+
+        yeni_kullanici = Kullanici(id=None,isim=isim,email=email,sifre=sifre,role="user")
+        db.session.add(yeni_kullanici)
+        db.session.commit()
+        return redirect("/login")  
+    return render_template("register.html")
+
+@app.route("login",methods=["POST"])
+
+    
+
 
 @app.route("/kitaplar", methods=["GET"])
 def kitaplari_getir():
