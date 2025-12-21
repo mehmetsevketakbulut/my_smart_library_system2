@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Kütüphane Sistemi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow sticky-top py-3">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="fas fa-book-reader me-2"></i>Akbulut Halk Kütüphanesi
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0" id="main-nav" style="display: none;">
+                    <li class="nav-item">
+                        <a class="nav-link active px-3" href="#" onclick="showSection('kitaplar-sec')">
+                            <i class="fas fa-book me-1"></i> Kitaplar
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link px-3" href="#" onclick="showSection('iade-odeme-sec')">
+                            <i class="fas fa-undo-alt me-1"></i> İade & Ödeme
+                        </a>
+                    </li>
+                    <li class="nav-item" id="admin-link" style="display: none;">
+                        <a class="nav-link px-3" href="#" onclick="showSection('admin-sec')">
+                            <i class="fas fa-user-shield me-1"></i> Admin Paneli
+                        </a>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center gap-2">
+                    <span id="user-display" class="text-white fw-semibold me-2"></span>
+                    <button id="logout-btn" class="btn btn-light btn-sm text-primary fw-bold" style="display: none;" onclick="logout()">
+                        <i class="fas fa-sign-out-alt me-1"></i> Çıkış
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div id="alert-box" class="alert d-none shadow-sm" role="alert"></div>
+    </div>
+
+    <div class="container mt-5" id="auth-sec">
+        <div class="row justify-content-center">
+            <div class="col-md-5 col-lg-4">
+                <div class="card shadow-lg border-0 rounded-4">
+                    <div class="card-header bg-white text-center py-4 border-bottom-0">
+                        <h4 class="text-primary fw-bold mb-3">Hoşgeldiniz</h4>
+                        <ul class="nav nav-pills nav-fill bg-light rounded-pill p-1" id="auth-tabs">
+                            <li class="nav-item">
+                                <a class="nav-link active rounded-pill" href="#" onclick="toggleAuth('login')">Giriş Yap</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link rounded-pill" href="#" onclick="toggleAuth('register')">Kayıt Ol</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body p-4">
+                        <form id="login-form">
+                            <div class="form-floating mb-3">
+                                <input type="email" id="login-email" class="form-control" placeholder="name@example.com" required>
+                                <label for="login-email">Email Adresi</label>
+                            </div>
+                            <div class="form-floating mb-4">
+                                <input type="password" id="login-pass" class="form-control" placeholder="Şifre" required>
+                                <label for="login-pass">Şifre</label>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 btn-lg rounded-3">Giriş Yap</button>
+                        </form>
+
+                        <form id="register-form" class="d-none">
+                            <div class="form-floating mb-3">
+                                <input type="text" id="reg-name" class="form-control" placeholder="Ad Soyad" required>
+                                <label for="reg-name">Ad Soyad</label>
+                            </div>
+                            <div class="form-floating mb-3">
+                                <input type="email" id="reg-email" class="form-control" placeholder="name@example.com" required>
+                                <label for="reg-email">Email Adresi</label>
+                            </div>
+                            <div class="form-floating mb-4">
+                                <input type="password" id="reg-pass" class="form-control" placeholder="Şifre" required>
+                                <label for="reg-pass">Şifre</label>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100 btn-lg rounded-3">Kayıt Ol</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mt-4" id="main-content" style="display: none;">
+        
+        <section id="kitaplar-sec">
+            <div class="d-flex justify-content-between align-items-center mb-4 p-3 bg-white rounded shadow-sm">
+                <h3 class="mb-0 text-primary"><i class="fas fa-book me-2"></i>Kütüphane Arşivi</h3>
+                <div class="input-group w-50">
+                    <input type="text" id="search-input" class="form-control" placeholder="Kitap adı, yazar veya kategori ara...">
+                    <button class="btn btn-primary" onclick="loadBooks()"><i class="fas fa-search"></i> Ara</button>
+                </div>
+            </div>
+            
+            <div class="row g-4" id="books-container">
+            </div>
+            
+            <nav class="mt-5">
+                <ul class="pagination justify-content-center" id="pagination"></ul>
+            </nav>
+        </section>
+
+        <section id="iade-odeme-sec" class="d-none">
+            
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+                        <div class="card-header bg-info text-white py-3">
+                            <h5 class="mb-0"><i class="fas fa-book-open me-2"></i>Elimdeki Kitaplar (İade Edilmemiş)</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover table-striped align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="ps-4">Kitap Adı</th>
+                                            <th>Alış Tarihi</th>
+                                            <th>Yayın Yılı</th>
+                                            <th>Ödünç ID</th>
+                                            <th class="text-end pe-4">İşlem</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="my-books-body">
+                                        <tr><td colspan="5" class="text-center py-4">Yükleniyor...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm h-100 rounded-3">
+                        <div class="card-header bg-warning text-dark fw-bold py-3">
+                            <i class="fas fa-undo me-2"></i>Kitap İade Et
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-light border small text-muted mb-3">
+                                <i class="fas fa-info-circle me-1"></i> İade işlemi için yukarıdaki listeden <strong>"İade Et"</strong> butonuna basabilir veya ID'yi elle girebilirsiniz.
+                            </div>
+                            <form id="return-form">
+                                <div class="form-floating mb-3">
+                                    <input type="number" id="ret-odunc-id" class="form-control" placeholder="Ödünç ID" required>
+                                    <label for="ret-odunc-id">Ödünç ID</label>
+                                </div>
+                                <button type="submit" class="btn btn-warning w-100 fw-bold">
+                                    <i class="fas fa-check me-1"></i> İade Et
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm h-100 rounded-3">
+                        <div class="card-header bg-danger text-white fw-bold py-3">
+                            <i class="fas fa-credit-card me-2"></i>Ceza Sorgula & Öde
+                        </div>
+                        <div class="card-body">
+                            <label class="form-label text-muted">Ödünç ID (İade edilmiş kayıt)</label>
+                            <div class="input-group mb-4">
+                                <input type="number" id="ceza-odunc-id" class="form-control form-control-lg" placeholder="ID Giriniz">
+                                <button class="btn btn-secondary" onclick="checkFine()">Sorgula</button>
+                            </div>
+                            
+                            <div id="payment-area" class="d-none border p-4 rounded bg-light text-center">
+                                <h2 class="text-danger mb-3 fw-bold" id="fine-amount">0.0 TL</h2>
+                                <p class="text-muted small">Gecikme cezası tespit edildi.</p>
+                                <input type="hidden" id="hidden-ceza-id">
+                                <button class="btn btn-success w-100 btn-lg" onclick="payFine()">
+                                    Şimdi Öde <i class="fas fa-check-circle ms-2"></i>
+                                </button>
+                            </div>
+
+                            <div id="no-fine-msg" class="d-none alert alert-success mt-2 text-center">
+                                <i class="fas fa-check-circle me-2"></i> Gecikme cezası bulunmamaktadır veya ödenmiştir.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="admin-sec" class="d-none">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm rounded-3">
+                        <div class="card-header bg-success text-white fw-bold py-3">
+                            <i class="fas fa-plus-circle me-2"></i>Yeni Kitap Ekle
+                        </div>
+                        <div class="card-body">
+                            <form id="add-book-form">
+                                <div class="form-floating mb-2">
+                                    <input type="text" id="add-name" class="form-control" placeholder="Kitap Adı" required>
+                                    <label for="add-name">Kitap Adı</label>
+                                </div>
+                                <div class="form-floating mb-2">
+                                    <input type="text" id="add-author" class="form-control" placeholder="Yazar Adı" required>
+                                    <label for="add-author">Yazar Adı</label>
+                                </div>
+                                <div class="form-floating mb-2">
+                                    <input type="text" id="add-cat" class="form-control" placeholder="Kategori" required>
+                                    <label for="add-cat">Kategori</label>
+                                </div>
+                                <div class="form-floating mb-3">
+                                    <input type="number" id="add-year" class="form-control" placeholder="Yayın Yılı">
+                                    <label for="add-year">Yayın Yılı</label>
+                                </div>
+                                <button type="submit" class="btn btn-success w-100">
+                                    <i class="fas fa-save me-1"></i> Kaydet
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm rounded-3">
+                        <div class="card-header bg-danger text-white fw-bold py-3">
+                            <i class="fas fa-trash-alt me-2"></i>Kitap Sil
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-warning small">
+                                <i class="fas fa-exclamation-triangle me-1"></i> Dikkat: Silinen kitaplar geri getirilemez. Sadece ID'si bilinen kitaplar silinebilir.
+                            </div>
+                            <form id="del-book-form">
+                                <div class="form-floating mb-3">
+                                    <input type="number" id="del-id" class="form-control" placeholder="Kitap ID" required>
+                                    <label for="del-id">Silinecek Kitap ID</label>
+                                </div>
+                                <button type="submit" class="btn btn-danger w-100">
+                                    <i class="fas fa-trash me-1"></i> Sil
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/script.js"></script>
+</body>
+</html>
