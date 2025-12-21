@@ -1,21 +1,13 @@
-# --- Python Derleme Dosyaları (Gereksiz) ---
+ #(Gereksiz) 
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-
-# --- Sanal Ortamlar (Çok Önemli!) ---
 venv/
 env/
 .venv/
-
-# --- Çevresel Değişkenler (Güvenlik İçin!) ---
 .env
-
-# --- Veritabanı (Eğer yerel test db'si ise atılmaz) ---
 *.sqlite3
 *.db
-
-# --- IDE Ayar Dosyaları (VS Code vb.) ---
 .vscode/
 .idea/
