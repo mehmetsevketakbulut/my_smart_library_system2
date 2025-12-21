@@ -67,16 +67,28 @@
                     </div>
                     <div class="card-body p-4">
                         <form id="login-form">
-                            <div class="form-floating mb-3">
-                                <input type="email" id="login-email" class="form-control" placeholder="name@example.com" required>
-                                <label for="login-email">Email Adresi</label>
-                            </div>
-                            <div class="form-floating mb-4">
-                                <input type="password" id="login-pass" class="form-control" placeholder="Şifre" required>
-                                <label for="login-pass">Şifre</label>
-                            </div>
-                            <button type="submit" class="btn btn-primary w-100 btn-lg rounded-3">Giriş Yap</button>
-                        </form>
+    <div class="form-floating mb-3">
+        <input type="email" id="login-email" class="form-control" placeholder="name@example.com" required>
+        <label for="login-email">Email Adresi</label>
+    </div>
+    <div class="form-floating mb-4">
+        <input type="password" id="login-pass" class="form-control" placeholder="Şifre" required>
+        <label for="login-pass">Şifre</label>
+    </div>
+    <button type="submit" class="btn btn-primary w-100 btn-lg rounded-3 mb-3">Giriş Yap</button>
+    
+    <div class="text-center">
+        <a href="#" class="text-decoration-none small" onclick="showForgotForm(event)">Şifremi Unuttum</a>
+    </div>
+
+    <div id="forgot-password-area" class="d-none mt-3 p-3 bg-light rounded border">
+        <p class="small text-muted mb-2">Sıfırlama linki için e-postanızı girin:</p>
+        <div class="input-group input-group-sm">
+            <input type="email" id="forgot-email" class="form-control" placeholder="Email adresiniz">
+            <button class="btn btn-outline-primary" type="button" onclick="sendResetLink()">Gönder</button>
+        </div>
+    </div>
+</form>
 
                         <form id="register-form" class="d-none">
                             <div class="form-floating mb-3">

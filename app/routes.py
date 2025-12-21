@@ -1,10 +1,14 @@
 from flask import current_app as app, jsonify, request
-from . import db
+from . import db , mail
 from .models import Kitap, Kullanici, Yazar, Kategori, Odunc, User,Ceza
 from flask import render_template
-from datetime import datetime, date
+from datetime import datetime
+from flask_mail import Message
+from itsdangerous import URLSafeTimedSerializer
 
 
+def get_serializer():
+    return URLSafeTimedSerializer(app.config['SECRET_KEY']) #token uretmek için
 
 @app.route("/home")
 def home():
@@ -109,7 +113,7 @@ def oduncal():
         return jsonify({"mesaj": "Bu kitap zaten ödünçte"}), 400
     user.odunc_al(kitap_id)
     return jsonify({"mesaj": "Kitap ödünç alındı"}), 200
-import random # Dosyanın en üstüne eklemeyi unutma
+import random 
 
 @app.route("/iadeEt", methods=["POST"])
 def iadeet():
@@ -120,14 +124,14 @@ def iadeet():
     if not odunc_kaydi:
         return jsonify({"mesaj": "Ödünç kaydı bulunamadı"}), 404
 
-    # Kitabı iade edilmiş olarak işaretle
+    
     odunc_kaydi.teslim_tarihi = datetime.now()
 
-    # %50 Şansla ceza oluştur (0 gelirse temiz, 1 gelirse cezalı)
+    
     ceza_ciksin_mi = random.choice([True, False])
 
     if ceza_ciksin_mi:
-        # Rastgele 10 ile 40 TL arası bir ceza tutarı
+        
         rastgele_tutar = random.randint(10, 40)
         
         yeni_ceza = Ceza(
@@ -145,7 +149,7 @@ def iadeet():
             "ceza_id": yeni_ceza.id
         }), 200
     else:
-        # Ceza oluşmayan durum
+        
         db.session.commit()
         return jsonify({
             "mesaj": "Kitap başarıyla ve zamanında iade edildi.",
@@ -306,4 +310,50 @@ def db_guncelle():
         return "Veritabanı güncellendi! Ceza tablosu oluşturuldu. Şimdi iade yapabilirsiniz."
     except Exception as e:
         return f"Hata oluştu: {str(e)}"
+    
+@app.route("/sifremi-unuttum", methods=["POST"]) 
+def sifremi_unuttum():
+    data = request.get_json()
+    email = data.get('email')
+    user = User.query.filter_by(email=email).first()
+    
+    if user:
+        s = get_serializer()
+        token = s.dumps(email, salt='email-confirm')
+        link = f"http://localhost:9999/sifre-sifirla/{token}" 
+        
+        msg = Message('Şifre Sıfırlama', sender=app.config['MAIL_USERNAME'], recipients=[email])
+        msg.body = f"Şifrenizi sıfırlamak için linke tıklayın: {link}"
+        mail.send(msg)
+        return jsonify({"mesaj": "Link gönderildi"}), 200
+    
+    return jsonify({"mesaj": "Email bulunamadı"}), 404
+@app.route("/sifre-sifirla/<token>", methods=["GET"])
+def sifre_sifirla_sayfasi(token):
+    return render_template("reset_password.html", token=token)
+
+@app.route("/sifre-onayla/<token>", methods=["POST"])
+def sifre_onayla(token):
+    try:
+        email = s.loads(token, salt='email-confirm', max_age=1800)
+    except:
+        return jsonify({"mesaj": "Link geçersiz veya süresi dolmuş!"}), 400
+
+    data = request.get_json()
+    yeni_sifre = data.get('sifre')
+
+    if not yeni_sifre:
+        return jsonify({"mesaj": "Şifre alanı boş olamaz!"}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"mesaj": "Kullanıcı bulunamadı!"}), 404
+
+    try:
+        user.setsifre(yeni_sifre)
+        db.session.commit()
+        return jsonify({"mesaj": "Şifreniz başarıyla güncellendi"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"mesaj": "İşlem sırasında hata oluştu"}), 500
 

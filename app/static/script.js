@@ -1,13 +1,11 @@
 let currentUser = null; 
 
 document.addEventListener("DOMContentLoaded", () => {
-    // Sayfa yüklendiğinde oturum kontrolü
     const storedUser = localStorage.getItem("libraryUser");
     if (storedUser) {
         currentUser = JSON.parse(storedUser);
         initApp();
     }
-    // Tarih inputları silindiği için eski tarih atama kodları kaldırıldı.
 });
 
 function toggleAuth(type) {
@@ -114,7 +112,7 @@ function showSection(secId) {
     }
 }
 
-// KİTAPLARI LİSTELE
+// KİTAPLARI LİSTELEME
 async function loadBooks(page = 1) {
     const query = document.getElementById("search-input").value;
     const url = `/kitaplar?page=${page}&q=${query}`;
@@ -168,7 +166,7 @@ async function borrowBook(bookId) {
     else showAlert("warning", result.mesaj);
 }
 
-// KULLANICININ KİTAPLARINI GETİR
+// KİTAP GETİRME
 async function loadMyBooks() {
     if (!currentUser || currentUser.role !== "user") return;
 
@@ -218,13 +216,12 @@ async function loadMyBooks() {
     }
 }
 
-// SEÇİLEN KİTABI FORM INPUTUNA KOY
 function selectForReturn(id) {
     document.getElementById("ret-odunc-id").value = id;
     showAlert("success", `ID: ${id} iade formuna seçildi. Butona basarak işlemi tamamlayın.`);
 }
 
-// İADE İŞLEMİ (GÜNCELLENEN KISIM - TARİHSİZ)
+// İADE İŞLEMİ
 document.getElementById("return-form").addEventListener("submit", async (e) => {
     e.preventDefault(); 
     
@@ -236,7 +233,6 @@ document.getElementById("return-form").addEventListener("submit", async (e) => {
     }
 
     try {
-        // Backend'e sadece ID gönderiyoruz. Tarih ve İsim artık backend'de hallediliyor.
         const res = await fetch("/iadeEt", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -250,14 +246,12 @@ document.getElementById("return-form").addEventListener("submit", async (e) => {
         if (res.ok) {
             if (result.durum === 'cezali') {
                 alert("⚠️ DİKKAT! GECİKME CEZASI!\n\n" + result.mesaj + "\n\nCeza Tutarı: " + result.ceza_miktari + " TL");
-                // Cezalı durumlarda ceza ödeme alanına yönlendir
                 document.getElementById("ceza-odunc-id").value = oduncId;
                 checkFine(); 
             } 
             else {
                 alert("✅ " + result.mesaj);
             }
-            // Listeyi güncelle ve formu temizle
             loadMyBooks();
             document.getElementById("return-form").reset();
 
@@ -271,7 +265,7 @@ document.getElementById("return-form").addEventListener("submit", async (e) => {
     }
 });
 
-// CEZA SORGULA
+// CEZA SORGULAMA
 async function checkFine() {
     const oduncId = document.getElementById("ceza-odunc-id").value;
     if(!oduncId) return showAlert("warning", "Lütfen bir Ödünç ID girin");
@@ -299,7 +293,7 @@ async function checkFine() {
     }
 }
 
-// CEZA ÖDE
+// CEZA ÖDEME
 async function payFine() {
     const cezaId = document.getElementById("hidden-ceza-id").value;
     
@@ -320,7 +314,7 @@ async function payFine() {
     }
 }
 
-// KİTAP EKLE (ADMİN)
+// KİTAP EKLEME İSLEMİ
 document.getElementById("add-book-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const data = {
@@ -347,7 +341,7 @@ document.getElementById("add-book-form").addEventListener("submit", async (e) =>
     }
 });
 
-// KİTAP SİL (ADMİN)
+// KİTAP SİLME İSLEMİ
 document.getElementById("del-book-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const kitapId = document.getElementById("del-id").value;
@@ -369,7 +363,7 @@ document.getElementById("del-book-form").addEventListener("submit", async (e) =>
     }
 });
 
-// BİLDİRİM KUTUSU
+// BİLDİRİMLER
 function showAlert(type, message) {
     const alertBox = document.getElementById("alert-box");
     alertBox.className = `alert alert-${type}`;
@@ -379,4 +373,39 @@ function showAlert(type, message) {
     setTimeout(() => {
         alertBox.classList.add("d-none");
     }, 4000);
+}
+
+//Şifremi UNuttuum alanı
+function showForgotForm(event) {
+    event.preventDefault();
+    const area = document.getElementById('forgot-password-area');
+    area.classList.toggle('d-none');
+}
+async function sendResetLink() {
+    const email = document.getElementById('forgot-email').value;
+    
+    if (!email) {
+        alert("Lütfen e-posta adresinizi giriniz.");
+        return;
+    }
+
+    try {
+        const response = await fetch('/sifremi-unuttum', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email })
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert("Başarılı: " + data.mesaj);
+            document.getElementById('forgot-password-area').classList.add('d-none');
+        } else {
+            alert("Hata: " + data.mesaj);
+        }
+    } catch (error) {
+        console.error("Hata:", error);
+        alert("Bir sorun oluştu, lütfen tekrar deneyin.");
+    }
 }
