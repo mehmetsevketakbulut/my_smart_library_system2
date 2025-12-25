@@ -56,11 +56,9 @@ class User(Kullanici):
         super().__init__(isim=isim, email=email, role="user", sifre=sifre)
     
     def odunc_al(self, kitap_id):
-        from datetime import datetime, timedelta
-        
-        simdi = datetime.now()
+        simdi = datetime.now().replace(microsecond=0)
         beklenen = simdi + timedelta(minutes=1) 
-        
+
         yeni_odunc = Odunc(
             kitap_id=kitap_id, 
             kullanici_id=self.id, 

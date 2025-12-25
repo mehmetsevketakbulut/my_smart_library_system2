@@ -2,14 +2,14 @@ from flask import current_app as app, jsonify, request
 from . import db , mail
 from .models import Kitap, Kullanici, Yazar, Kategori, Odunc, User,Ceza
 from flask import render_template
-from datetime import datetime
+from datetime import datetime,date
 from flask_mail import Message
 from itsdangerous import URLSafeTimedSerializer
 
 
 def get_serializer():
     return URLSafeTimedSerializer(app.config['SECRET_KEY']) #token uretmek için
-
+@app.route('/')
 @app.route("/home")
 def home():
     return render_template("index.html")
@@ -89,7 +89,6 @@ def kitaplari_getir():
     
     return jsonify({"page": page, "page_size": page_size, "total": total,"items": [k.to_dict() for k in kitaplar]})
 
-
 @app.route("/oduncKitapAl", methods=["POST"])
 def oduncal():
     data = request.get_json()
@@ -108,12 +107,12 @@ def oduncal():
     kitap = Kitap.query.get(kitap_id)
     if not kitap:
         return jsonify({"mesaj": "Kitap bulunamadı"}), 404
+
     oduncte_mi = Odunc.query.filter_by(kitap_id=kitap_id, teslim_tarihi=None).first()
     if oduncte_mi:
         return jsonify({"mesaj": "Bu kitap zaten ödünçte"}), 400
     user.odunc_al(kitap_id)
     return jsonify({"mesaj": "Kitap ödünç alındı"}), 200
-import random 
 
 @app.route("/iadeEt", methods=["POST"])
 def iadeet():
@@ -121,40 +120,38 @@ def iadeet():
     odunc_id = data.get("odunc_id")
     
     odunc_kaydi = Odunc.query.get(odunc_id)
-    if not odunc_kaydi:
-        return jsonify({"mesaj": "Ödünç kaydı bulunamadı"}), 404
+    if not odunc_kaydi or odunc_kaydi.teslim_tarihi:
+        return jsonify({"mesaj": "Geçersiz işlem"}), 400
 
+    simdi = datetime.now()
+    odunc_kaydi.teslim_tarihi = simdi
+
+    odunc_tarihi = odunc_kaydi.odunc_tarihi
+    if not isinstance(odunc_tarihi, datetime):
+        odunc_tarihi = datetime.combine(odunc_tarihi, datetime.min.time())
+
+    fark_saniye = (simdi - odunc_tarihi).total_seconds()
     
-    odunc_kaydi.teslim_tarihi = datetime.now()
+    ceza_miktari = 0
+    durum = "temiz"
 
-    
-    ceza_ciksin_mi = random.choice([True, False])
-
-    if ceza_ciksin_mi:
-        
-        rastgele_tutar = random.randint(10, 40)
-        
-        yeni_ceza = Ceza(
-            odunc_id=odunc_id,
-            tutar=rastgele_tutar,
-            odendi=False
-        )
+    if fark_saniye > 60:
+        gecikme_dakikasi = int(fark_saniye // 60)
+        ceza_miktari = gecikme_dakikasi * 5 
+        yeni_ceza = Ceza(odunc_id=odunc_id, tutar=ceza_miktari, odendi=False)
         db.session.add(yeni_ceza)
-        db.session.commit()
+        durum = "cezali"
 
-        return jsonify({
-            "mesaj": "Kitap iade edildi ancak GECİKME CEZASI oluştu!",
-            "durum": "cezali",
-            "ceza_miktari": rastgele_tutar,
-            "ceza_id": yeni_ceza.id
-        }), 200
-    else:
-        
+    try:
         db.session.commit()
         return jsonify({
-            "mesaj": "Kitap başarıyla ve zamanında iade edildi.",
-            "durum": "temiz"
+            "mesaj": "İşlem başarılı", 
+            "durum": durum, 
+            "ceza": ceza_miktari
         }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"mesaj": "Hata", "hata": str(e)}), 500
 @app.route("/kitapEkle", methods=["POST"])
 def kitapekle():
     data = request.get_json()
@@ -328,6 +325,7 @@ def sifremi_unuttum():
         return jsonify({"mesaj": "Link gönderildi"}), 200
     
     return jsonify({"mesaj": "Email bulunamadı"}), 404
+
 @app.route("/sifre-sifirla/<token>", methods=["GET"])
 def sifre_sifirla_sayfasi(token):
     return render_template("reset_password.html", token=token)
@@ -335,8 +333,10 @@ def sifre_sifirla_sayfasi(token):
 @app.route("/sifre-onayla/<token>", methods=["POST"])
 def sifre_onayla(token):
     try:
+        s = get_serializer()
         email = s.loads(token, salt='email-confirm', max_age=1800)
-    except:
+    except Exception as e:
+        print(f"Token Hatası: {str(e)}")
         return jsonify({"mesaj": "Link geçersiz veya süresi dolmuş!"}), 400
 
     data = request.get_json()
@@ -356,4 +356,3 @@ def sifre_onayla(token):
     except Exception as e:
         db.session.rollback()
         return jsonify({"mesaj": "İşlem sırasında hata oluştu"}), 500
-
