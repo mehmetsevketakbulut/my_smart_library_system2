@@ -5,6 +5,7 @@ from flask import render_template
 from datetime import datetime,date
 from flask_mail import Message
 from itsdangerous import URLSafeTimedSerializer
+from sqlalchemy import text
 
 
 def get_serializer():
@@ -356,3 +357,25 @@ def sifre_onayla(token):
     except Exception as e:
         db.session.rollback()
         return jsonify({"mesaj": "İşlem sırasında hata oluştu"}), 500
+    
+@app.route("/api/gecikmisKitaplar", methods=["GET"])
+def gecikmis_kitaplar_api():
+    try:
+        sonuc = db.session.execute(text("CALL GecikmisKitaplariListele()"))
+        kayitlar = sonuc.fetchall()
+
+        liste = []
+        for kayit in kayitlar:
+            liste.append({
+                "kullanici": kayit.KullaniciAdi,
+                "kitap": kayit.KitapAdi,
+                "odunc_tarihi": kayit.odunc_tarihi.strftime("%Y-%m-%d %H:%M"),
+                "beklenen_iade": kayit.beklenen_iade.strftime("%Y-%m-%d %H:%M"),
+                "gecikme_suresi": kayit.GecikmeDakikasi
+            })
+
+        return jsonify(liste), 200
+
+    except Exception as e:
+        print(f"Hata: {e}")
+        return jsonify({"mesaj": "Veri çekilemedi", "hata": str(e)}), 500

@@ -83,17 +83,23 @@ function logout() {
 }
 
 function initApp() {
+
     document.getElementById("auth-sec").style.display = "none";
     document.getElementById("main-content").style.display = "block";
     document.getElementById("main-nav").style.display = "flex";
     document.getElementById("logout-btn").style.display = "block";
-    
     document.getElementById("user-display").innerText = `Hoşgeldin, ${currentUser.isim}`;
 
-    if (currentUser.role === "admin") {
-        document.getElementById("admin-link").style.display = "block";
-    }
+    const adminLink = document.getElementById("admin-link");
+    const iadeLink = document.getElementById("iade-link-li"); 
 
+    if (currentUser.role === "admin") {
+        adminLink.style.display = "block"; 
+        if(iadeLink) iadeLink.style.display = "none"; 
+    } else {
+        adminLink.style.display = "none"; 
+        if(iadeLink) iadeLink.style.display = "block"; 
+    }
     loadBooks(); 
 }
 
@@ -407,5 +413,44 @@ async function sendResetLink() {
     } catch (error) {
         console.error("Hata:", error);
         alert("Bir sorun oluştu, lütfen tekrar deneyin.");
+    }
+}
+// Gecikmiş kitap gosterme
+async function gecikmeleriGetir() {
+    const tbody = document.getElementById('gecikmeTablosuGovdesi');
+    
+    if (!tbody) return; 
+
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3"><div class="spinner-border text-primary spinner-border-sm"></div> Veriler çekiliyor...</td></tr>';
+
+    try {
+        const res = await fetch('/api/gecikmisKitaplar');
+        const data = await res.json();
+
+        tbody.innerHTML = "";
+
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center alert alert-success m-0"><i class="fas fa-check-circle me-2"></i>Harika! Şu an gecikmede olan kitap yok.</td></tr>';
+            return;
+        }
+
+        data.forEach(item => {
+            const html = `
+                <tr>
+                    <td class="fw-bold">${item.kullanici}</td>
+                    <td>${item.kitap}</td>
+                    <td><span class="badge bg-secondary">${item.odunc_tarihi}</span></td>
+                    <td><span class="badge bg-info text-dark">${item.beklenen_iade}</span></td>
+                    <td class="text-danger fw-bold">
+                        <i class="fas fa-exclamation-circle me-1"></i> ${item.gecikme_suresi} Dakika
+                    </td>
+                </tr>
+            `;
+            tbody.innerHTML += html;
+        });
+
+    } catch (error) {
+        console.error(error);
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Veri çekilirken hata oluştu!</td></tr>';
     }
 }
